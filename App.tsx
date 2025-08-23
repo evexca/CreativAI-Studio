@@ -7,7 +7,6 @@ import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import ChatPage from './pages/ChatPage';
 import ImageGeneratorPage from './pages/ImageGeneratorPage';
-import VideoGeneratorPage from './pages/ApiGalleryPage';
 import MusicGeneratorPage from './pages/SearchPage';
 import SplashScreen from './pages/SplashScreen';
 
@@ -23,8 +22,6 @@ const App: React.FC = () => {
         return <ChatPage />;
       case Page.IMAGE_GENERATOR:
         return <ImageGeneratorPage />;
-      case Page.VIDEO_GENERATOR:
-        return <VideoGeneratorPage />;
       case Page.MUSIC_GENERATOR:
         return <MusicGeneratorPage />;
       default:
