@@ -123,7 +123,12 @@ const ImageGeneratorPage: React.FC = () => {
         >
           {isLoading ? 'Generating...' : 'Generate Image'}
         </button>
-        {error && <p className="text-red-500 mt-4">{error}</p>}
+        {error && (
+            <div className="text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-md mt-4">
+                <p className="font-semibold">Error</p>
+                <p className="whitespace-pre-wrap text-sm">{error}</p>
+            </div>
+        )}
       </div>
 
       <div className="mt-8">

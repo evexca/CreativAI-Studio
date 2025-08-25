@@ -14,7 +14,7 @@ export default async function handler(req: Request) {
   }
 
   if (!process.env.API_KEY) {
-    return new Response(JSON.stringify({ error: 'API key not configured' }), {
+    return new Response(JSON.stringify({ error: 'API key not configured. Please set the API_KEY environment variable in your Vercel project.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
@@ -51,7 +51,8 @@ export default async function handler(req: Request) {
 
   } catch (error) {
     console.error('Error generating image:', error);
-    return new Response(JSON.stringify({ error: 'Failed to generate image' }), {
+    const errorMessage = error instanceof Error ? error.toString() : 'An unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
