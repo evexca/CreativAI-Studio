@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, GenerateContentResponse, Chat, Type } from "@google/genai";
 import { ChatMessage } from '../types';
 
@@ -39,18 +40,6 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
     return await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [imagePart, textPart] },
-    });
-};
-
-export const generateImage = async (prompt: string, aspectRatio: string) => {
-    return ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
-        prompt: prompt,
-        config: {
-            numberOfImages: 1,
-            outputMimeType: 'image/jpeg',
-            aspectRatio: aspectRatio,
-        },
     });
 };
 

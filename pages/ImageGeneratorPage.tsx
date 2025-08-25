@@ -1,6 +1,5 @@
 
 import React, { useState, useCallback } from 'react';
-import { generateImage } from '../services/geminiService';
 import { ImageIcon, DownloadIcon, ShareIcon } from '../components/Icons';
 
 const ASPECT_RATIOS = [
@@ -27,13 +26,26 @@ const ImageGeneratorPage: React.FC = () => {
     setError(null);
     setImageUrl(null);
     try {
-      const response = await generateImage(prompt, aspectRatio);
-      const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-      const url = `data:image/jpeg;base64,${base64ImageBytes}`;
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, aspectRatio }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate image.');
+      }
+      
+      const { image: base64Image } = await response.json();
+      const url = `data:image/jpeg;base64,${base64Image}`;
       setImageUrl(url);
-    } catch (err) {
+
+    } catch (err: any) {
       console.error(err);
-      setError('Failed to generate image. Please try again.');
+      setError(err.message || 'Failed to generate image. Please try again.');
     } finally {
       setIsLoading(false);
     }
