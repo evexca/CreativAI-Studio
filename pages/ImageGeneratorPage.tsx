@@ -45,7 +45,11 @@ const ImageGeneratorPage: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to generate image. Please try again.');
+      let errorMessage = err.message || 'Failed to generate image. Please try again.';
+      if (typeof errorMessage === 'string' && errorMessage.includes('Imagen API is only accessible to billed users')) {
+          errorMessage = 'Image generation failed. The Imagen API requires a billed Google Cloud account. Please ensure your API key is configured correctly and associated with an active billing account.';
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

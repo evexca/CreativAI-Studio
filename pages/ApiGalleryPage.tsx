@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generateVideo, getVideoOperation } from '../services/geminiService';
 import { VideoIcon, DownloadIcon, ShareIcon } from '../components/Icons';
@@ -91,9 +92,13 @@ const VideoGeneratorPage: React.FC = () => {
             const initialOperation = await generateVideo(prompt);
             operationRef.current = initialOperation;
             pollerRef.current = window.setInterval(pollOperation, 10000); // Poll every 10 seconds
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError('Failed to start video generation. Please try again.');
+            let errorMessage = 'Failed to start video generation. Please try again.';
+            if (err?.message && typeof err.message === 'string' && err.message.includes('API is only accessible to billed users')) {
+                errorMessage = 'Video generation failed. This feature requires a billed Google Cloud account. Please ensure your API key is associated with an active billing account.';
+            }
+            setError(errorMessage);
             setIsLoading(false);
             stopPolling();
         }
@@ -146,7 +151,12 @@ const VideoGeneratorPage: React.FC = () => {
                 >
                     {isLoading ? 'Generating...' : 'Generate Video'}
                 </button>
-                {error && <p className="text-red-500 mt-4">{error}</p>}
+                {error && (
+                    <div className="text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-md mt-4">
+                        <p className="font-semibold">Error</p>
+                        <p className="whitespace-pre-wrap text-sm">{error}</p>
+                    </div>
+                )}
             </div>
 
             <div className="mt-8">
