@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Page } from '../types';
-import { ChatIcon, ImageIcon } from '../components/Icons';
+import { ChatIcon, ImageIcon, MusicIcon } from '../components/Icons';
 
 interface HomePageProps {
   setActivePage: (page: Page) => void;
@@ -15,17 +15,14 @@ const FeatureCard: React.FC<{
 }> = ({ icon, title, description, onClick }) => (
   <button
     onClick={onClick}
-    className="bg-brand-surface border border-brand-border rounded-lg p-6 text-center w-full h-full flex flex-col items-center hover:border-brand-primary hover:bg-opacity-50 transition-all duration-300"
+    className="bg-brand-light border border-brand-light-gray rounded-xl p-6 text-center w-full h-full flex flex-col items-center hover:border-brand-primary hover:shadow-lg transition-all duration-300 group"
     aria-label={`Go to ${title}`}
   >
-    <div className="bg-brand-primary text-white rounded-lg p-2 mb-3">
-      {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-5 h-5" })}
+    <div className="text-brand-primary text-3xl mb-4 group-hover:scale-110 transition-transform">
+      {icon}
     </div>
-    <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-    <p className="text-brand-text-secondary flex-grow text-sm">{description}</p>
-    <div className="mt-4 text-brand-primary font-semibold text-sm">
-      Get Started &rarr;
-    </div>
+    <h3 className="text-lg font-bold text-brand-dark mb-2">{title}</h3>
+    <p className="text-brand-gray flex-grow text-sm">{description}</p>
   </button>
 );
 
@@ -65,44 +62,52 @@ const galleryItems = [
 
 const HomePage: React.FC<HomePageProps> = ({ setActivePage }) => {
   return (
-    <div className="flex flex-col items-center text-center">
-        <div className="max-w-4xl mx-auto w-full">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">
-                Welcome to <span className="text-brand-primary">CreativAI Studio</span>
-            </h1>
-            <p className="text-lg text-brand-text-secondary mb-12">
-                Your all-in-one platform for exploring the creative power of AI. Choose a tool below to begin.
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-8 w-full">
+    <div className="flex flex-col text-center h-full">
+        <div className="max-w-5xl mx-auto w-full">
+             <div className="bg-white p-6 sm:p-8 rounded-2xl border border-brand-light-gray shadow-lg mb-8">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-brand-dark mb-4">
+                    Welcome to <span className="text-brand-primary">Creativ AI</span>
+                </h1>
+                <p className="text-base sm:text-lg text-brand-gray max-w-3xl mx-auto">
+                    Your all-in-one platform for exploring the creative power of AI. Choose a tool below to begin your journey.
+                </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl mx-auto mb-12 md:mb-16">
                 <FeatureCard 
                     icon={<ChatIcon />}
                     title="AI Chat"
-                    description="Engage in intelligent conversations, ask complex questions, and get instant, human-like answers."
+                    description="Engage in intelligent conversations and get instant, human-like answers."
                     onClick={() => setActivePage(Page.CHAT)}
                 />
                 <FeatureCard 
                     icon={<ImageIcon />}
                     title="Image Generator"
-                    description="Bring your wildest ideas to life. Create stunning, unique visuals from simple text descriptions."
+                    description="Bring your wildest ideas to life. Create stunning visuals from simple text."
                     onClick={() => setActivePage(Page.IMAGE_GENERATOR)}
+                />
+                 <FeatureCard 
+                    icon={<MusicIcon />}
+                    title="Music Generator"
+                    description="Compose unique song structures, lyrics, and chords from a simple idea."
+                    onClick={() => setActivePage(Page.MUSIC_GENERATOR)}
                 />
             </div>
 
-            <div className="mt-20 w-full mb-8">
-                <h2 className="text-3xl font-bold text-white mb-4">Inspiration Gallery</h2>
-                <p className="text-md text-brand-text-secondary mb-8 max-w-2xl mx-auto">
-                    See what's possible with our Image Generator. From photorealistic scenes to abstract art, your imagination is the only limit. All images below were generated from simple text prompts.
+            <div className="w-full">
+                <h2 className="text-3xl font-bold text-brand-dark mb-4">Inspiration Gallery</h2>
+                <p className="text-md text-brand-gray mb-8 max-w-2xl mx-auto">
+                    See what's possible with our Image Generator. From photorealistic scenes to abstract art, your imagination is the only limit.
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {galleryItems.map((item, index) => (
-                        <div key={index} className="group relative overflow-hidden rounded-lg shadow-lg">
+                        <div key={index} className="group relative overflow-hidden rounded-lg shadow-md">
                             <img 
                                 src={item.src} 
                                 alt={item.alt} 
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 aspect-square"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2 sm:p-4">
                                 <p className="text-white text-xs md:text-sm transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                                     "{item.prompt}"
                                 </p>

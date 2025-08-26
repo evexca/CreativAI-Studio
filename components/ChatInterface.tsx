@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { streamChat } from '../services/geminiService';
+import { streamChat } from '../services/aiService';
 import { ChatMessage, MessageRole } from '../types';
-import { SendIcon, UserIcon } from './Icons';
+import { SendIcon, UserIcon, RobotIcon } from './Icons';
 
 interface ChatInterfaceProps {
   systemInstruction: string;
@@ -22,7 +22,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeh
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
+  
   const handleSend = useCallback(async () => {
     if (input.trim() === '' || isLoading) return;
 
@@ -65,7 +65,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeh
     } catch (error) {
       console.error("Error streaming chat:", error);
       setMessages(prev => [
-          ...prev, 
+          ...prev.filter(m => m.text !== ''), // remove empty streaming message
           { role: MessageRole.MODEL, text: "Sorry, I encountered an error. Please try again." }
       ]);
     } finally {
@@ -81,29 +81,39 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeh
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
-      <div className="flex-1 overflow-y-auto pr-4 space-y-6">
-        {messages.map((msg, index) => (
-          <div key={index} className={`flex gap-4 ${msg.role === MessageRole.USER ? 'justify-end' : ''}`}>
-            {msg.role === MessageRole.MODEL && (
-              <div className="w-8 h-8 rounded-full bg-brand-primary flex-shrink-0 flex items-center justify-center text-white font-bold">
-                AI
-              </div>
-            )}
-            <div className={`p-4 rounded-xl max-w-lg ${msg.role === MessageRole.USER ? 'bg-brand-primary text-white' : 'bg-brand-surface'}`}>
-              <p className="whitespace-pre-wrap">{msg.text}{msg.isStreaming && <span className="inline-block w-2 h-4 bg-white animate-pulse ml-1"></span>}</p>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-brand-chat-bg">
+         {messages.length === 0 && (
+            <div className={`flex gap-4 items-start`}>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex-shrink-0 flex items-center justify-center text-xl text-brand-dark">
+                    <RobotIcon />
+                </div>
+                <div className={`p-4 rounded-2xl max-w-lg bg-white shadow-sm rounded-tl-none`}>
+                    <p className="whitespace-pre-wrap text-brand-dark">Hello! I'm your AI companion. How can I assist you today?</p>
+                </div>
             </div>
-            {msg.role === MessageRole.USER && (
-               <div className="w-8 h-8 rounded-full bg-brand-surface flex-shrink-0 flex items-center justify-center">
-                 <UserIcon />
-               </div>
-            )}
+         )}
+
+        {messages.map((msg, index) => (
+          <div key={index} className={`flex gap-4 items-start ${msg.role === MessageRole.USER ? 'justify-end flex-row-reverse' : 'justify-start'}`}>
+             <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-xl text-brand-dark ${
+                 msg.role === MessageRole.MODEL ? 'bg-gradient-to-br from-blue-100 to-blue-200' : 'bg-gradient-to-br from-green-100 to-green-200'
+             }`}>
+                {msg.role === MessageRole.MODEL ? <RobotIcon /> : <UserIcon />}
+              </div>
+            <div className={`p-4 rounded-2xl max-w-[85%] sm:max-w-lg shadow-sm ${
+                msg.role === MessageRole.USER 
+                ? 'bg-brand-chat-user rounded-tr-none' 
+                : 'bg-white rounded-tl-none'
+            }`}>
+              <p className="whitespace-pre-wrap text-brand-dark">{msg.text}{msg.isStreaming && <span className="inline-block w-2 h-4 bg-brand-dark animate-pulse ml-1"></span>}</p>
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="mt-6">
+      <div className="p-4 bg-white border-t border-brand-light-gray">
         <div className="relative">
           <textarea
             value={input}
@@ -111,15 +121,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeh
             onKeyPress={handleKeyPress}
             placeholder={placeholderText}
             rows={1}
-            className="w-full bg-brand-surface border border-brand-border rounded-lg p-4 pr-16 resize-none focus:ring-2 focus:ring-brand-primary focus:outline-none"
+            className="w-full bg-brand-light border border-gray-300 rounded-full py-3 px-6 pr-16 resize-none focus:ring-2 focus:ring-brand-primary focus:outline-none text-brand-dark"
             disabled={isLoading}
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-brand-primary disabled:bg-brand-border disabled:cursor-not-allowed text-white hover:bg-brand-primary-hover transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-brand-primary disabled:bg-brand-light-gray disabled:cursor-not-allowed text-white hover:bg-brand-secondary transition-all duration-300 flex items-center justify-center"
           >
-            <SendIcon />
+            <SendIcon className="w-6 h-6" />
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
-
-import React, { useState, useCallback } from 'react';
-import { ImageIcon, DownloadIcon, ShareIcon } from '../components/Icons';
+import React, { useState, useCallback, useEffect } from 'react';
+import { generateImage } from '../services/aiService';
+import { ImageIcon, DownloadIcon, ShareIcon, MagicIcon, PaletteIcon } from '../components/Icons';
 
 const ASPECT_RATIOS = [
     { value: '1:1', label: 'Square (1:1)' },
@@ -10,46 +10,59 @@ const ASPECT_RATIOS = [
     { value: '3:4', label: 'Tall (3:4)' },
 ];
 
+const ART_STYLES = ['Anime', 'Realistic', 'Cartoon', 'Logo'];
+
 const ImageGeneratorPage: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Sync selectedStyle with prompt content for button UI
+    const match = prompt.match(/^(Anime|Realistic|Cartoon|Logo) Style: /);
+    if (match && ART_STYLES.includes(match[1])) {
+      setSelectedStyle(match[1]);
+    } else {
+      setSelectedStyle(null);
+    }
+  }, [prompt]);
+
+  const handleStyleClick = (style: string) => {
+    const stylePrefix = `${style} Style: `;
+    // If this style is already selected, deselect it by removing the prefix
+    if (selectedStyle === style) {
+        setPrompt(prompt.replace(stylePrefix, '').trimStart());
+    } else {
+        // A different style is selected, or no style is selected.
+        // Remove any existing style prefix.
+        const stylePrefixRegex = /^(?:Anime|Realistic|Cartoon|Logo) Style: /;
+        const basePrompt = prompt.replace(stylePrefixRegex, '').trimStart();
+        // Add the new prefix.
+        setPrompt(`${stylePrefix}${basePrompt}`);
+    }
+  };
+  
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim()) {
+    const finalPrompt = prompt.trim();
+    if (!finalPrompt) {
       setError('Please enter a prompt.');
       return;
     }
+
     setIsLoading(true);
     setError(null);
     setImageUrl(null);
     try {
-      const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt, aspectRatio }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate image.');
-      }
-      
-      const { image: base64Image } = await response.json();
+      const base64Image = await generateImage(finalPrompt, aspectRatio);
       const url = `data:image/jpeg;base64,${base64Image}`;
       setImageUrl(url);
 
     } catch (err: any) {
       console.error(err);
-      let errorMessage = err.message || 'Failed to generate image. Please try again.';
-      if (typeof errorMessage === 'string' && errorMessage.includes('Imagen API is only accessible to billed users')) {
-          errorMessage = 'Image generation failed. The Imagen API requires a billed Google Cloud account. Please ensure your API key is configured correctly and associated with an active billing account.';
-      }
-      setError(errorMessage);
+      setError(err.message || 'Failed to generate image. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +89,7 @@ const ImageGeneratorPage: React.FC = () => {
 
       await navigator.share({
         files: [file],
-        title: 'Image generated with CreativAI Studio',
+        title: 'Image generated with Creativ AI',
         text: `Check out this image I created: "${prompt}"`,
       });
     } catch (error) {
@@ -89,26 +102,33 @@ const ImageGeneratorPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-brand-surface p-6 rounded-lg border border-brand-border">
-        <h3 className="text-lg font-semibold mb-4 text-white">Generate an Image</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g., A blue robot holding a red skateboard in a futuristic city"
-                rows={3}
-                className="w-full md:col-span-3 bg-brand-bg border border-brand-border rounded-md p-3 text-brand-text focus:ring-2 focus:ring-brand-primary focus:outline-none"
-            />
-            <div className="w-full md:col-span-1">
-                <label htmlFor="aspect-ratio" className="sr-only">Aspect Ratio</label>
+    <div className="flex flex-col h-full bg-white rounded-2xl shadow-lg overflow-hidden border border-brand-light-gray">
+      <header className="p-5 bg-brand-light border-b border-brand-light-gray">
+        <h2 className="text-xl font-bold text-brand-dark flex items-center gap-3">
+            <PaletteIcon />
+            Image Generation
+        </h2>
+        <p className="text-brand-gray mt-1">Describe what you want to create</p>
+      </header>
+
+      <div className="p-5 space-y-4">
+        <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., A blue robot holding a red skateboard in a futuristic city"
+            rows={4}
+            className="w-full bg-brand-light border border-gray-300 rounded-xl p-4 text-brand-dark focus:ring-2 focus:ring-brand-primary focus:outline-none resize-none"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="aspect-ratio" className="text-sm font-medium text-brand-gray mb-2 block">Aspect Ratio</label>
                 <select
                     id="aspect-ratio"
                     value={aspectRatio}
                     onChange={(e) => setAspectRatio(e.target.value)}
-                    className="w-full h-full bg-brand-bg border border-brand-border rounded-md px-3 py-2 text-brand-text focus:ring-2 focus:ring-brand-primary focus:outline-none appearance-none"
+                    className="w-full bg-brand-light border border-gray-300 rounded-xl px-4 py-3 text-brand-dark focus:ring-2 focus:ring-brand-primary focus:outline-none appearance-none"
                     style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238B949E' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236c757d' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: 'right 0.5rem center',
                         backgroundRepeat: 'no-repeat',
                         backgroundSize: '1.5em 1.5em',
@@ -119,37 +139,64 @@ const ImageGeneratorPage: React.FC = () => {
                     ))}
                 </select>
             </div>
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-brand-gray">Select a Style</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {ART_STYLES.map(style => (
+                        <button
+                            key={style}
+                            onClick={() => handleStyleClick(style)}
+                            className={`w-full text-center px-2 py-2.5 rounded-lg border transition-all duration-200 text-sm font-semibold ${
+                                selectedStyle === style
+                                    ? 'bg-brand-primary text-white border-brand-primary shadow-md'
+                                    : 'bg-white text-brand-dark border-gray-300 hover:bg-brand-light-gray hover:border-brand-primary'
+                            }`}
+                        >
+                            {style}
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
         <button
           onClick={handleGenerate}
           disabled={isLoading}
-          className="mt-4 w-full bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-2 px-4 rounded-md transition-colors disabled:bg-brand-border disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-[#9b59b6] to-[#3498db] hover:opacity-90 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 disabled:bg-brand-light-gray disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isLoading ? 'Generating...' : 'Generate Image'}
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <MagicIcon />
+              <span>Generate Image</span>
+            </>
+          )}
         </button>
         {error && (
-            <div className="text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-md mt-4">
+            <div className="text-red-800 bg-red-100 border border-red-300 p-3 rounded-md mt-4">
                 <p className="font-semibold">Error</p>
                 <p className="whitespace-pre-wrap text-sm">{error}</p>
             </div>
         )}
       </div>
-
-      <div className="mt-8">
+      
+      <div className="flex-1 p-5 bg-brand-light-gray/60 flex items-center justify-center">
         {isLoading && (
-          <div style={placeholderStyle} className="w-full bg-brand-surface rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-brand-border animate-pulse">
-            <ImageIcon className="w-12 h-12 text-brand-text-secondary" />
-            <p className="mt-2 text-brand-text-secondary">Generating your masterpiece...</p>
+          <div style={placeholderStyle} className="w-full max-w-md bg-white rounded-lg flex flex-col items-center justify-center border border-dashed border-gray-300 animate-pulse p-4">
+            <ImageIcon className="w-12 h-12 text-gray-400" />
+            <p className="mt-2 text-brand-gray">Generating your masterpiece...</p>
           </div>
         )}
-        {imageUrl && (
-          <div>
-             <h4 className="text-lg font-semibold mb-4 text-white">Result</h4>
+        {imageUrl && !isLoading && (
+          <div className="w-full">
              <img src={imageUrl} alt={prompt} className="w-full rounded-lg shadow-lg" />
              <div className="mt-4 flex flex-col sm:flex-row gap-4">
                 <button
                     onClick={handleDownload}
-                    className="flex-1 bg-brand-surface hover:bg-brand-border text-brand-text font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-white hover:bg-brand-light-gray text-brand-dark font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 border border-gray-300"
                 >
                     <DownloadIcon />
                     <span>Download</span>
@@ -157,7 +204,7 @@ const ImageGeneratorPage: React.FC = () => {
                 {typeof navigator.share === 'function' && (
                     <button
                         onClick={handleShare}
-                        className="flex-1 bg-brand-surface hover:bg-brand-border text-brand-text font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 bg-white hover:bg-brand-light-gray text-brand-dark font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 border border-gray-300"
                     >
                         <ShareIcon />
                         <span>Share</span>
@@ -167,12 +214,13 @@ const ImageGeneratorPage: React.FC = () => {
           </div>
         )}
          {!isLoading && !imageUrl && (
-            <div style={placeholderStyle} className="w-full bg-brand-surface rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-brand-border">
-                <ImageIcon className="w-12 h-12 text-brand-text-secondary" />
-                <p className="mt-2 text-brand-text-secondary">Your generated image will appear here.</p>
+            <div style={placeholderStyle} className="w-full max-w-md bg-white rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-gray-300 p-8 text-center">
+                <ImageIcon className="w-16 h-16 text-brand-primary" />
+                <p className="mt-4 text-brand-gray">Your generated image will appear here.</p>
             </div>
         )}
       </div>
+
     </div>
   );
 };
